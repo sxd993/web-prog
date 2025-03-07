@@ -1,0 +1,21 @@
+<!-- books/book_confirm_delete.html -->
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Удалить книгу</title>
+</head>
+
+<body>
+    <h1>Вы уверены, что хотите удалить книгу "{{ book.title }}"?</h1>
+
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit">Удалить</button>
+    </form>
+
+    <a href="{% url 'book_list' %}">Отменить</a>
+</body>
+
+</html>

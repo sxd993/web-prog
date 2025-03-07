@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Выход</title>
+</head>
+
+<body>
+    <h1>Выход</h1>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit">Выйти</button>
+    </form>
+
+    <p><a href="{% url 'book_list' %}">Вернуться к списку книг</a></p>
+</body>
+
+</html>
