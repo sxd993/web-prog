@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Корзина</title>
+    <style>
+        /* Основные стили */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 2rem;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        /* Список товаров в корзине */
+        .cart-items {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .cart-item-info {
+            flex: 1;
+        }
+
+        .cart-item-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .cart-item-price {
+            font-size: 1rem;
+            color: #7f8c8d;
+        }
+
+        .cart-item-quantity {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .cart-item-quantity input {
+            width: 60px;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .cart-item-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Кнопки */
+        .btn {
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn-primary {
+            background-color: #3498db;
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+
+        .btn-danger {
+            background-color: #e74c3c;
+            color: #fff;
+        }
+
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+
+        .btn-success {
+            background-color: #27ae60;
+            color: #fff;
+        }
+
+        .btn-success:hover {
+            background-color: #219150;
+        }
+
+        /* Общая стоимость */
+        .total-cost {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #2c3e50;
+            text-align: right;
+            margin-bottom: 20px;
+        }
+
+        /* Сообщение о пустой корзине */
+        .empty-cart-message {
+            text-align: center;
+            font-size: 1.2rem;
+            color: #7f8c8d;
+            padding: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Ваша корзина</h1>
+
+        <form method="POST" action="{% url 'update_cart' %}">
+            {% csrf_token %}
+            
+            {% if cart_items %}
+                <div class="cart-items">
+                    {% for item in cart_items %}
+                        <div class="cart-item">
+                            <div class="cart-item-info">
+                                <div class="cart-item-title">{{ item.book.title }}</div>
+                                <div class="cart-item-price">{{ item.book.price }} ₽ за шт.</div>
+                            </div>
+                            <div class="cart-item-quantity">
+                                <input type="number" name="quantity_{{ item.id }}" value="{{ item.quantity }}" min="1">
+                                <span>шт.</span>
+                            </div>
+                            <div class="cart-item-actions">
+                                <button type="submit" class="btn btn-primary">Обновить</button>
+                                <a href="{% url 'remove_from_cart' cart_item_id=item.id %}" class="btn btn-danger">Удалить</a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div class="total-cost">
+                    Общая стоимость: {{ total_cost|floatformat:2 }} ₽
+                </div>
+
+                <div style="display: flex; justify-content: space-between;">
+                    <button type="submit" class="btn btn-primary">Обновить корзину</button>
+                    <a href="{% url 'checkout' %}" class="btn btn-success">Оформить заказ</a>
+                </div>
+            {% else %}
+                <p class="empty-cart-message">Ваша корзина пуста.</p>
+            {% endif %}
+        </form>
+    </div>
+</body>
+
+</html>
