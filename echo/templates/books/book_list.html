@@ -188,11 +188,6 @@
             <a href="{% url 'profile' %}" class="btn btn-secondary">Личный кабинет</a>
             <a href="{% url 'view_cart' %}" class="btn btn-info">
                 Корзина
-                {% if cart_item_quantity %}
-                ({{ cart_item_quantity }})
-                {% else %}
-                (0)
-                {% endif %}
             </a>
         </div>
 
