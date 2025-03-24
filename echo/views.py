@@ -9,97 +9,93 @@ import random
 from django.http import HttpResponse
 from captcha.models import CaptchaStore
 from captcha.helpers import captcha_image_url
+from django.utils.timezone import localtime
+
 
 # Функция для проверки, является ли пользователь администратором
-
-
 def is_admin(user):
     return user.is_staff  # Или можно использовать группировку, если необходимо
 
+
 # Неавторизованный пользователь может просматривать список книг
-
-
 def book_list(request):
     books = Book.objects.all()
     paginator = Paginator(books, 5)
-    page_number = request.GET.get('page')
+    page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
-    return render(request, 'books/book_list.html', {'page_obj': page_obj})
+    return render(request, "books/book_list.html", {"page_obj": page_obj})
+
 
 # Авторизованный пользователь может добавлять книги
-
-
 @login_required
 def book_create(request):
-    if request.method == 'POST':
+    if request.method == "POST":
         form = BookForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('book_list')
+            return redirect("book_list")
     else:
         form = BookForm()
-    return render(request, 'books/book_create.html', {'form': form})
+    return render(request, "books/book_create.html", {"form": form})
+
 
 # Администратор может редактировать книги
-
-
 @login_required
 @user_passes_test(is_admin)
 def book_update(request, pk):
     book = get_object_or_404(Book, pk=pk)
-    if request.method == 'POST':
+    if request.method == "POST":
         form = BookForm(request.POST, instance=book)
         if form.is_valid():
             form.save()
-            return redirect('book_list')
+            return redirect("book_list")
     else:
         form = BookForm(instance=book)
 
-    return render(request, 'books/book_update.html', {'form': form})
+    return render(request, "books/book_update.html", {"form": form})
+
 
 # Администратор может удалять книги
-
-
 @login_required
 @user_passes_test(is_admin)
 def book_delete(request, pk):
     book = get_object_or_404(Book, pk=pk)
-    if request.method == 'POST':
+    if request.method == "POST":
         book.delete()
-        return redirect('book_list')
-    return render(request, 'books/book_delete.html', {'book': book})
+        return redirect("book_list")
+    return render(request, "books/book_delete.html", {"book": book})
+
 
 # Представление для регистрации
-
-
 def register(request):
-    if request.method == 'POST':
+    if request.method == "POST":
         form = UserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
             login(request, user)
-            return redirect('book_list')
+            return redirect("book_list")
     else:
         form = UserCreationForm()
 
-    return render(request, 'books/register.html', {'form': form})
+    return render(request, "books/register.html", {"form": form})
+
 
 # Представление для авторизации
-
-
 def login_view(request):
     captcha_error = None
 
-    if request.method == 'POST':
+    if request.method == "POST":
         form = AuthenticationForm(request, data=request.POST)
         captcha_key = request.POST.get("captcha_0", "")
         captcha_value = request.POST.get("captcha_1", "")
-        
-        if CaptchaStore.objects.filter(hashkey=captcha_key, response=captcha_value).exists():
+
+        if CaptchaStore.objects.filter(
+            hashkey=captcha_key, response=captcha_value
+        ).exists():
             if form.is_valid():
                 user = form.get_user()
                 login(request, user)
-                next_url = request.GET.get('next', 'book_list')
+                next_url = request.GET.get("next", "book_list")
                 return redirect(next_url)
         else:
             captcha_error = "Неверный код CAPTCHA"
@@ -111,20 +107,24 @@ def login_view(request):
     captcha_key = CaptchaStore.generate_key()
     captcha_url = captcha_image_url(captcha_key)
 
-    return render(request, 'books/login.html', {
-        'form': form,
-        'captcha_key': captcha_key,
-        'captcha_url': captcha_url,
-        'captcha_error': captcha_error
-    })
+    return render(
+        request,
+        "books/login.html",
+        {
+            "form": form,
+            "captcha_key": captcha_key,
+            "captcha_url": captcha_url,
+            "captcha_error": captcha_error,
+        },
+    )
 
 
 def logout_view(request):
     logout(request)
-    return redirect('book_list')
+    return redirect("book_list")
+
+
 # Личный кабинет
-
-
 @login_required
 def user_profile(request):
     user = request.user
@@ -132,10 +132,10 @@ def user_profile(request):
         form = UserProfileForm(request.POST, instance=user)
         if form.is_valid():
             form.save()
-            return redirect('profile')
+            return redirect("profile")
     else:
         form = UserProfileForm(instance=user)
-    return render(request, 'books/profile.html', {'form': form})
+    return render(request, "books/profile.html", {"form": form})
 
 
 @login_required
@@ -149,48 +149,63 @@ def add_to_cart(request, book_id):
         cart_item.quantity += 1
         cart_item.save()
 
-    return redirect('view_cart')  # перенаправляем на страницу корзины
+    return redirect("view_cart")  # перенаправляем на страницу корзины
+
 
 # Обновление корзины
-
-
 @login_required
 def update_cart(request):
-    if request.method == 'POST':
-        # Получаем список товаров из формы
-        cart_items = request.POST.getlist('cart_item_id')
-        for item_id in cart_items:
-            quantity = int(request.POST.get(f'quantity_{item_id}'))
-            cart_item = Cart.objects.get(id=item_id)
+    if request.method == "POST":
+        user = request.user
+
+        # Обновление одного товара
+        if "update_item" in request.POST:
+            item_id = request.POST["update_item"]
+            quantity = int(request.POST.get(f"quantity_{item_id}", 1))
+
             if quantity > 0:
+                cart_item = Cart.objects.get(id=item_id, user=user)
                 cart_item.quantity = quantity
                 cart_item.save()
             else:
-                cart_item.delete()  # Если количество = 0, удаляем товар из корзины
-        return redirect('view_cart')
+                Cart.objects.filter(id=item_id, user=user).delete()
+
+        # Обновление всей корзины
+        elif "update_all" in request.POST:
+            for item in Cart.objects.filter(user=user):
+                quantity = int(request.POST.get(f"quantity_{item.id}", 1))
+
+                if quantity > 0:
+                    item.quantity = quantity
+                    item.save()
+                else:
+                    item.delete()
+
+        return redirect("view_cart")
+
+    return redirect("view_cart")
+
 
 # Просмотр корзины
-
-
 @login_required
 def view_cart(request):
     user = request.user
     cart_items = Cart.objects.filter(user=user)
     total_cost = sum(item.book.price * item.quantity for item in cart_items)
-    return render(request, 'books/cart.html', {'cart_items': cart_items, 'total_cost': total_cost})
+    return render(
+        request, "books/cart.html", {"cart_items": cart_items, "total_cost": total_cost}
+    )
+
 
 # Удалить товар из корзины
-
-
 @login_required
 def remove_from_cart(request, cart_item_id):
     cart_item = Cart.objects.get(id=cart_item_id, user=request.user)
     cart_item.delete()
-    return redirect('view_cart')  # Перенаправление на страницу корзины
+    return redirect("view_cart")  # Перенаправление на страницу корзины
+
 
 # Оформить заказ
-
-
 @login_required
 def checkout(request):
     user = request.user
@@ -206,8 +221,7 @@ def checkout(request):
     # Добавление товаров из корзины в заказ
     total_cost = 0
     for item in cart_items:
-        order_item = OrderItem(
-            order=order, book=item.book, quantity=item.quantity)
+        order_item = OrderItem(order=order, book=item.book, quantity=item.quantity)
         order_item.save()
         total_cost += item.book.price * item.quantity
 
@@ -221,24 +235,25 @@ def checkout(request):
     cart_items.delete()
 
     # Перенаправление на страницу деталей заказа
-    return redirect('order_detail', order_id=order.id)
+    return redirect("order_detail", order_id=order.id)
+
 
 # Детали заказа
-
-
 @login_required
 def order_detail(request, order_id):
     order = Order.objects.get(id=order_id)
     order_items = OrderItem.objects.filter(order=order)
     total_cost = sum(item.book.price * item.quantity for item in order_items)
+    order_date = localtime(order.created_at).strftime("%d-%m-%Y %H:%M:%S")
 
     # Отображаем информацию о заказе
-    return render(request, 'books/order_detail.html', {
-        'order': order,
-        'order_items': order_items,
-        'total_cost': total_cost,
-        'order_date': order.created_at.strftime("%d-%m-%Y %H:%M:%S"),
-    })
-
-
-
+    return render(
+        request,
+        "books/order_detail.html",
+        {
+            "order": order,
+            "order_items": order_items,
+            "total_cost": total_cost,
+            "order_date": order_date,
+        },
+    )
