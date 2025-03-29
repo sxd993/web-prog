@@ -1,7 +1,7 @@
 from django.urls import path, include
 from .views import (book_list, book_create, book_update, book_delete, register, login_view, 
                     logout_view, user_profile, add_to_cart, update_cart, view_cart, 
-                    checkout, remove_from_cart, order_detail)
+                    checkout, remove_from_cart, order_detail, check_email, order_list)
 
 urlpatterns = [
     # Страница регистрации
@@ -23,6 +23,7 @@ urlpatterns = [
 
     # Личный кабинет
     path('profile/', user_profile, name='profile'),
+    path('orders/', order_list, name='order_list'),
 
     # Корзина
     path('add_to_cart/<int:book_id>/', add_to_cart, name='add_to_cart'),
@@ -34,4 +35,7 @@ urlpatterns = [
 
     # Подключаем маршруты CAPTCHA
     path('captcha/', include('captcha.urls')),
+
+    # Маршрут для проверки почты
+    path('api/check-email/', check_email, name='check_email')
 ]

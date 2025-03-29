@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.core.paginator import Paginator
 from .models import Book, Cart, Order, OrderItem
 from .forms import BookForm, UserProfileForm
-from django.contrib.auth import login, authenticate, logout
+from django.contrib.auth import login, authenticate, logout, get_user_model
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.decorators import login_required, user_passes_test
 import random
@@ -10,20 +10,44 @@ from django.http import HttpResponse
 from captcha.models import CaptchaStore
 from captcha.helpers import captcha_image_url
 from django.utils.timezone import localtime
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+import json
 
 
-# Функция для проверки, является ли пользователь администратором
 def is_admin(user):
-    return user.is_staff  # Или можно использовать группировку, если необходимо
+    print(f"User: {user}, is_staff: {user.is_staff}")
+    return user.is_staff
 
 
 # Неавторизованный пользователь может просматривать список книг
 def book_list(request):
     books = Book.objects.all()
+
+    # Фильтрация по автору и диапазону цен
+    author = request.GET.get('author', '')
+    min_price = request.GET.get('min_price', '')
+    max_price = request.GET.get('max_price', '')
+
+    if author:
+        books = books.filter(author__icontains=author)
+    if min_price:
+        books = books.filter(price__gte=min_price)
+    if max_price:
+        books = books.filter(price__lte=max_price)
+
+    # Пагинация
     paginator = Paginator(books, 5)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
-    return render(request, "books/book_list.html", {"page_obj": page_obj})
+
+    return render(request, "books/book_list.html", {
+        "page_obj": page_obj,
+        "author": author,
+        "min_price": min_price,
+        "max_price": max_price
+    })
 
 
 # Авторизованный пользователь может добавлять книги
@@ -79,6 +103,23 @@ def register(request):
 
     return render(request, "books/register.html", {"form": form})
 
+# Представление для списка заказов
+@login_required
+def order_list(request):
+    orders = Order.objects.filter(user=request.user).prefetch_related('orderitem_set__book')
+    
+    order_data = []
+    for order in orders:
+        items = order.orderitem_set.all()
+        total_cost = sum(item.book.price * item.quantity for item in items)
+        order_data.append({
+            'order': order.id,
+            'order_date': order.created_at,
+            'order_items': items,
+            'total_cost': total_cost,
+        })
+    
+    return render(request, 'books/order_list.html', {'orders': order_data})
 
 # Представление для авторизации
 def login_view(request):
@@ -257,3 +298,25 @@ def order_detail(request, order_id):
             "order_date": order_date,
         },
     )
+
+
+@csrf_exempt
+@require_POST
+def check_email(request):
+    try:
+        data = json.loads(request.body)
+        email = data.get('email', '').strip().lower()
+
+        if not email:
+            return JsonResponse({'error': 'Email is required'}, status=400)
+
+        if '@' not in email or '.' not in email.split('@')[1]:
+            return JsonResponse({'error': 'Invalid email format'}, status=400)
+
+        exists = get_user_model().objects.filter(email__iexact=email).exists()
+        return JsonResponse({'is_unique': not exists})
+
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)

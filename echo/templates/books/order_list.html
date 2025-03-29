@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Детали заказа</title>
+    <title>Мои заказы</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -78,21 +78,30 @@
 
 <body>
     <div class="container">
-        <h1>Детали заказа</h1>
+        <h1>Мои заказы</h1>
 
-        <p><strong>Номер заказа:</strong> {{ order }}</p>
-        <p><strong>Дата оформления:</strong> {{ order_date }}</p>
+        {% if orders %}
+            {% for order in orders %}
+                <div class="order">
+                    <p><strong>Номер заказа:</strong> {{ order.order }}</p>
+                    <p><strong>Дата оформления:</strong> {{ order.order_date }}</p>
 
-        <h3>Состав заказа:</h3>
-        <ul class="list-group">
-            {% for item in order_items %}
-                <li class="list-group-item">{{ item.book.title }} - {{ item.quantity }} шт. - {{ item.book.price }} ₽</li>
+                    <h3>Состав заказа:</h3>
+                    <ul class="list-group">
+                        {% for item in order.order_items %}
+                            <li class="list-group-item">{{ item.book.title }} - {{ item.quantity }} шт. - {{ item.book.price }} ₽</li>
+                        {% endfor %}
+                    </ul>
+
+                    <h3>Общая сумма: {{ order.total_cost }} ₽</h3>
+                </div>
+                <hr>
             {% endfor %}
-        </ul>
+        {% else %}
+            <p>У вас пока нет заказов.</p>
+        {% endif %}
 
-        <h3>Общая сумма: {{ total_cost }} ₽</h3>
-
-        <br><br>
+        <br>
         <a href="{% url 'book_list' %}" class="btn btn-secondary">Перейти к списку книг</a>
     </div>
 </body>
