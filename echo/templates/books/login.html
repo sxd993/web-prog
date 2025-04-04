@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="ru">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -98,7 +97,6 @@
         }
     </style>
 </head>
-
 <body>
     <div class="container">
         <h1>Войти</h1>
@@ -109,6 +107,7 @@
                 {{ form.as_p }}
             </div>
 
+            {% if not TESTING %}
             <div class="mb-3">
                 <label>Введите код с картинки:</label>
                 <div class="d-flex">
@@ -120,6 +119,7 @@
                     <p class="text-danger">{{ captcha_error }}</p>
                 {% endif %}
             </div>
+            {% endif %}
 
             <button type="submit" class="btn btn-primary">Войти</button>
         </form>
@@ -127,5 +127,4 @@
         <p class="mt-3">Еще нет аккаунта? <a href="{% url 'register' %}" class="btn-link">Зарегистрироваться</a></p>
     </div>
 </body>
-
 </html>

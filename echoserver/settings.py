@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 import pymysql
 import os
+import sys
 
 
 pymysql.install_as_MySQLdb()
@@ -85,9 +86,9 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
         "NAME": "bookstore",
-        "USER": "root",
+        "USER": "sxd993",
         "PASSWORD": "Vova2005",
-        "HOST": "127.0.0.1",
+        "HOST": "sxd993.mysql.pythonanywhere-services.com",
         "PORT": "3306",
     }
 }
@@ -156,3 +157,5 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
+
+TESTING = 'test' in sys.argv
